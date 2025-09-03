@@ -10,7 +10,9 @@
     "vector:setup": "tsx src/vector/setup_index.ts",
     "ingest": "tsx src/ingestion.ts",
     "db:psql": "docker exec -it ai_advisor_pg psql -U postgres -d ai_advisor",
-     "agents:test": "tsx src/agents/test_run.ts"
+     "agents:test": "tsx src/agents/test_run.ts",
+     "migrate:conv": "tsx src/migrations/002_conversation.ts"
+
   },
   "keywords": [],
   "author": "",

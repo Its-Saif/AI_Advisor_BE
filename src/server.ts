@@ -7,6 +7,7 @@ import cors from 'cors';
 import adviceRouter from './routes/advice.js';
 import ingestRouter from './routes/ingest.js';
 import productsRouter from './routes/products.js';
+import messagesRouter from './routes/messages.js';
 
 
 
@@ -42,6 +43,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/advice', adviceRouter);     // POST /advice (SSE)
 app.use('/ingest', ingestRouter);     // POST /ingest
 app.use('/products', productsRouter); // GET /products/:id
+app.use('/messages', messagesRouter); 
 
 // 404
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
