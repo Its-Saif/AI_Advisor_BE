@@ -1,104 +1,60 @@
-import express from "express";
-import { WebSocketServer } from "ws";
-import http from "http";
-import cors from "cors";
-import dotenv from "dotenv";
+import 'dotenv/config';
+import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
 
-// Load environment variables
-dotenv.config();
+// Route modules (create these later: ./routes/advice, ./routes/ingest, ./routes/products)
+import adviceRouter from './routes/advice.js';
+import ingestRouter from './routes/ingest.js';
+import productsRouter from './routes/products.js';
+
+
 
 const app = express();
-const port = process.env.PORT || 8080;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Core middleware
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: '1mb' }));
 
-// Create HTTP server
-const server = http.createServer(app);
-
-// Create WebSocket server
-const wss = new WebSocketServer({ server });
-
-// Store connected clients
-const clients = new Set();
-
-// WebSocket connection handler
-wss.on("connection", (ws) => {
-  console.log("New client connected");
-  clients.add(ws);
-
-  // Send welcome message
-  ws.send(
-    JSON.stringify({
-      message: "Hello! I'm your AI advisor. How can I help you today?",
-      timestamp: new Date().toISOString(),
-    })
-  );
-
-  // Handle incoming messages
-  ws.on("message", async (data) => {
-    try {
-      const parsedData = JSON.parse(data.toString());
-      console.log("Received:", parsedData);
-
-      // Simulate AI response (replace this with your LLM integration)
-      const aiResponse = await simulateAIResponse(parsedData.message);
-
-      // Send AI response back to client
-      ws.send(
-        JSON.stringify({
-          message: aiResponse,
-          timestamp: new Date().toISOString(),
-        })
-      );
-    } catch (error) {
-      console.error("Error processing message:", error);
-      ws.send(
-        JSON.stringify({
-          message: "Sorry, I encountered an error processing your message.",
-          timestamp: new Date().toISOString(),
-        })
-      );
-    }
-  });
-
-  // Handle client disconnect
-  ws.on("close", () => {
-    console.log("Client disconnected");
-    clients.delete(ws);
-  });
-
-  // Handle errors
-  ws.on("error", (error) => {
-    console.error("WebSocket error:", error);
-    clients.delete(ws);
-  });
+// Lightweight SSE helpers available to any route
+app.use((req: Request, res: Response, next: NextFunction) => {
+	(res as any).sseInit = () => {
+		res.setHeader('Content-Type', 'text/event-stream');
+		res.setHeader('Cache-Control', 'no-cache, no-transform');
+		res.setHeader('Connection', 'keep-alive');
+		(res as any).flushHeaders?.();
+	};
+	(res as any).sseSend = (data: unknown, event?: string) => {
+		if (event) res.write(`event: ${event}\n`);
+		const payload = typeof data === 'string' ? data : JSON.stringify(data);
+		res.write(`data: ${payload}\n\n`);
+	};
+	(res as any).sseClose = () => res.end();
+	next();
 });
 
-// Simulate AI response (replace with actual LLM integration)
-async function simulateAIResponse(message: string): Promise<string> {
-  // Simulate processing delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  // Simple response logic (replace with your LLM)
-  const responses = [
-    `I understand you're asking about: "${message}". Let me help you with that.`,
-    `That's an interesting question about "${message}". Here's my perspective...`,
-    `Based on your message about "${message}", I'd recommend the following approach...`,
-    `Thank you for sharing that. Regarding "${message}", here's what I think...`,
-  ];
-
-  return responses[Math.floor(Math.random() * responses.length)];
-}
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.json({ status: "OK", timestamp: new Date().toISOString() });
+// Healthcheck
+app.get('/health', (_req: Request, res: Response) => {
+	res.status(200).json({ ok: true });
 });
 
-// Start server
-server.listen(Number(port), "0.0.0.0", () => {
-  console.log(`Server running on http://localhost:${port}`);
-  console.log(`WebSocket server running on ws://localhost:${port}`);
+// Mount routes
+app.use('/advice', adviceRouter);     // POST /advice (SSE)
+app.use('/ingest', ingestRouter);     // POST /ingest
+app.use('/products', productsRouter); // GET /products/:id
+
+// 404
+app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
+
+// Error handler
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+	const status = err?.statusCode || 500;
+	res.status(status).json({ error: err?.message || 'Internal Server Error' });
 });
+
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT, () => {
+	console.log(`API listening on http://localhost:${PORT}`);
+});
+
+export default app;
