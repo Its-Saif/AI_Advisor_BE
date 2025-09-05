@@ -5,14 +5,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
-    "migrate": "node --loader ts-node/esm src/migrations/001_init.ts",
-   "vector:test": "tsx src/vector/test_vector.ts",
+    "start": "tsx src/server.ts",
+    "migrate": "tsx src/migrations/001_init.ts",
+    "vector:test": "tsx src/vector/test_vector.ts",
     "vector:setup": "tsx src/vector/setup_index.ts",
     "ingest": "tsx src/ingestion.ts",
     "db:psql": "docker exec -it ai_advisor_pg psql -U postgres -d ai_advisor",
-     "agents:test": "tsx src/agents/test_run.ts",
-     "migrate:conv": "tsx src/migrations/002_conversation.ts",
-     "migrate:mode": "tsx src/migrations/003_messages_mode.ts"
+    "agents:test": "tsx src/agents/test_run.ts",
+    "migrate:conv": "tsx src/migrations/002_conversation.ts",
+    "migrate:mode": "tsx src/migrations/003_messages_mode.ts",
+    "migrate:all": "npm run migrate && npm run migrate:conv && npm run migrate:mode",
+    "setup": "npm run migrate:all && npm run vector:setup && npm run ingest"
 
   },
   "keywords": [],

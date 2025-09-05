@@ -26,5 +26,54 @@ services:
       postgres:
         condition: service_healthy
 
+  init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai_advisor_init
+    command: sh -lc "npm run setup"
+    environment:
+      # Database
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/ai_advisor
+      # OpenAI / Model
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      MODEL_CHAT: ${MODEL_CHAT:-gpt-4o-mini}
+      # Pinecone
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_INDEX: ${PINECONE_INDEX:-product-vectors}
+      PINECONE_REGION: ${PINECONE_REGION:-us-east-1}
+      PINECONE_CLOUD: ${PINECONE_CLOUD:-aws}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai_advisor_api
+    environment:
+      # Server
+      PORT: 3000
+      NODE_ENV: production
+      LOG_LEVEL: info
+      # Database
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/ai_advisor
+      # OpenAI / Model
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      MODEL_CHAT: ${MODEL_CHAT:-gpt-4o-mini}
+      # Pinecone
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_INDEX: ${PINECONE_INDEX:-product-vectors}
+      PINECONE_REGION: ${PINECONE_REGION:-us-east-1}
+      PINECONE_CLOUD: ${PINECONE_CLOUD:-aws}
+    ports:
+      - "3000:3000"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   pgdata_ai_advisor:
