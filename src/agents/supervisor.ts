@@ -86,12 +86,20 @@ export async function decideFlowLLM(input: {
     "Pick EXACTLY one: SMALL_TALK | FOLLOWUP_QA | MORE_PRODUCTS | NEW_PRODUCT | NOT_AVAILABLE.",
     "Definitions:",
     "- SMALL_TALK: greetings/thanks/chit-chat; respond politely and ask what product the user is looking for.",
-    "- FOLLOWUP_QA: user asks about the last recommended product (ask/it/this/price/spec/features/etc.); answer about THAT product.",
-    "- MORE_PRODUCTS: user asks for more/similar/alternatives based on the last recommendation; return remaining 2 alternatives.",
-    "- NEW_PRODUCT: user asks for a different product altogether OR mentions a different product type/category than the last recommended product (e.g., last was a leg massager, user asks for a neck massager).",
-    "- NOT_AVAILABLE: requested product/category is not available in the catalog (this may be set by the system when no matches are found).",
-    'Return JSON only: {"mode":"..."}',
+    "- FOLLOWUP_QA: user asks about the SAME last recommended product (price/specs/features/details about 'it'/'this'/'that product').",
+    "- MORE_PRODUCTS: user asks for more/similar/alternatives/better options of the SAME product type/category as the last recommendation.",
+    "- NEW_PRODUCT: user asks for a DIFFERENT product type/category/use case than the last recommended product, OR mentions a specific different product name/brand, OR asks for a product for a different body part/purpose.",
+    "- NOT_AVAILABLE: requested product/category is not available in the catalog.",
+    "",
+    "IMPORTANT RULES:",
+    "- If last product was a 'neck massager' and user asks for 'leg massager' → NEW_PRODUCT (different body part)",
+    "- If last product was an 'ECG device' and user asks for 'massager' → NEW_PRODUCT (completely different category)",
+    "- If last product was a 'massager' and user asks for 'better massager' → MORE_PRODUCTS (same category)",
+    "- If user asks for product for different body part/purpose than last product → NEW_PRODUCT",
+    "",
+    'Return JSON only: {"mode":"...","reason":"..."}',
   ].join(" ");
+
   const fewshot = [
     { role: "system", content: system },
     {
@@ -102,16 +110,37 @@ export async function decideFlowLLM(input: {
         has_last_candidates: false,
       }),
     },
-    { role: "assistant", content: '{"mode":"SMALL_TALK"}' },
+    { role: "assistant", content: '{"mode":"SMALL_TALK","reason":"greeting"}' },
     {
       role: "user",
       content: JSON.stringify({
         user_query: "is there something better?",
         has_last_product: true,
         has_last_candidates: true,
+        last_product: { category: "Healthtech and Wellness", product_name: "Neck Massager" }
       }),
     },
-    { role: "assistant", content: '{"mode":"MORE_PRODUCTS"}' },
+    { role: "assistant", content: '{"mode":"MORE_PRODUCTS","reason":"asking for better alternatives of same product type"}' },
+    {
+      role: "user",
+      content: JSON.stringify({
+        user_query: "and a leg massager?",
+        has_last_product: true,
+        has_last_candidates: true,
+        last_product: { category: "Healthtech and Wellness", product_name: "Neck Massager" }
+      }),
+    },
+    { role: "assistant", content: '{"mode":"NEW_PRODUCT","reason":"asking for different body part massager - leg vs neck"}' },
+    {
+      role: "user",
+      content: JSON.stringify({
+        user_query: "a massager for leg",
+        has_last_product: true,
+        has_last_candidates: true,
+        last_product: { category: "Healthtech and Wellness", product_name: "Portable ECG Device" }
+      }),
+    },
+    { role: "assistant", content: '{"mode":"NEW_PRODUCT","reason":"asking for massager when last product was ECG device - different product category"}' },
     {
       role: "user",
       content: JSON.stringify({
@@ -120,7 +149,7 @@ export async function decideFlowLLM(input: {
         has_last_candidates: false,
       }),
     },
-    { role: "assistant", content: '{"mode":"FOLLOWUP_QA"}' },
+    { role: "assistant", content: '{"mode":"FOLLOWUP_QA","reason":"asking about price of last recommended product"}' },
     {
       role: "user",
       content: JSON.stringify({
@@ -129,7 +158,7 @@ export async function decideFlowLLM(input: {
         has_last_candidates: false,
       }),
     },
-    { role: "assistant", content: '{"mode":"NEW_PRODUCT"}' },
+    { role: "assistant", content: '{"mode":"NEW_PRODUCT","reason":"new product request"}' },
     {
       role: "user",
       content: JSON.stringify({
@@ -142,7 +171,7 @@ export async function decideFlowLLM(input: {
         },
       }),
     },
-    { role: "assistant", content: '{"mode":"NEW_PRODUCT"}' },
+    { role: "assistant", content: '{"mode":"NEW_PRODUCT","reason":"asking for different body part massager - neck vs foot/leg"}' },
     { role: "user", content: JSON.stringify(input) },
   ];
   const msg = await llm.invoke(fewshot);
@@ -157,7 +186,7 @@ export async function decideFlowLLM(input: {
   const parsed = JSON.parse(
     start >= 0 && end > start ? text.slice(start, end + 1) : text
   );
-  logger.info({ input, decision: parsed?.mode }, "supervisor.decideFlow");
+  logger.info({ input, decision: parsed?.mode, reason: parsed?.reason }, "supervisor.decideFlow");
   if (!parsed?.mode) throw new Error("Supervisor: invalid mode");
   return parsed.mode as Mode;
 }
