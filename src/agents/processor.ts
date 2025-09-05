@@ -153,7 +153,7 @@ function isRelevant(p: Candidate, keywords: string[]): boolean {
 export async function findRelevantProducts(
   userQuery: string,
   topK = 3,
-  minScore = 0.7
+  minScore = 0.4
 ): Promise<Candidate[]> {
   const { matches } = await queryByText(userQuery, Math.max(8, topK + 4));
   const filtered = (matches || []).filter(
@@ -186,8 +186,10 @@ export async function pickBestOrNA(
   candidates: Candidate[]
 ): Promise<ProcessorPickDecision> {
   const system = [
-    "You are a strict product selector. From candidates, choose the single best product ONLY if it truly matches the user request.",
-    "If none match, return NOT AVAILABLE instead of forcing a pick.",
+    "You are a product selector. From candidates, choose the single best product that matches or is closely related to the user request.",
+    "Consider products that serve the same purpose or target the same body area, even if not exactly named the same.",
+    "For example: 'leg massager' request can match 'foot & leg massager' or 'lower limb massager'.",
+    "If none of the candidates are suitable or related, return NOT AVAILABLE.",
     "Return STRICT JSON ONLY in one of the two shapes:",
     '{"best_product_id":"...","rationale":"..."} OR {"not_available":true,"reason":"..."}',
   ].join(" ");
