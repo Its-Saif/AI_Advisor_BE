@@ -117,30 +117,51 @@ export async function decideFlowLLM(input: {
         user_query: "is there something better?",
         has_last_product: true,
         has_last_candidates: true,
-        last_product: { category: "Healthtech and Wellness", product_name: "Neck Massager" }
+        last_product: {
+          category: "Healthtech and Wellness",
+          product_name: "Neck Massager",
+        },
       }),
     },
-    { role: "assistant", content: '{"mode":"MORE_PRODUCTS","reason":"asking for better alternatives of same product type"}' },
+    {
+      role: "assistant",
+      content:
+        '{"mode":"MORE_PRODUCTS","reason":"asking for better alternatives of same product type"}',
+    },
     {
       role: "user",
       content: JSON.stringify({
         user_query: "and a leg massager?",
         has_last_product: true,
         has_last_candidates: true,
-        last_product: { category: "Healthtech and Wellness", product_name: "Neck Massager" }
+        last_product: {
+          category: "Healthtech and Wellness",
+          product_name: "Neck Massager",
+        },
       }),
     },
-    { role: "assistant", content: '{"mode":"NEW_PRODUCT","reason":"asking for different body part massager - leg vs neck"}' },
+    {
+      role: "assistant",
+      content:
+        '{"mode":"NEW_PRODUCT","reason":"asking for different body part massager - leg vs neck"}',
+    },
     {
       role: "user",
       content: JSON.stringify({
         user_query: "a massager for leg",
         has_last_product: true,
         has_last_candidates: true,
-        last_product: { category: "Healthtech and Wellness", product_name: "Portable ECG Device" }
+        last_product: {
+          category: "Healthtech and Wellness",
+          product_name: "Portable ECG Device",
+        },
       }),
     },
-    { role: "assistant", content: '{"mode":"NEW_PRODUCT","reason":"asking for massager when last product was ECG device - different product category"}' },
+    {
+      role: "assistant",
+      content:
+        '{"mode":"NEW_PRODUCT","reason":"asking for massager when last product was ECG device - different product category"}',
+    },
     {
       role: "user",
       content: JSON.stringify({
@@ -149,7 +170,11 @@ export async function decideFlowLLM(input: {
         has_last_candidates: false,
       }),
     },
-    { role: "assistant", content: '{"mode":"FOLLOWUP_QA","reason":"asking about price of last recommended product"}' },
+    {
+      role: "assistant",
+      content:
+        '{"mode":"FOLLOWUP_QA","reason":"asking about price of last recommended product"}',
+    },
     {
       role: "user",
       content: JSON.stringify({
@@ -158,7 +183,10 @@ export async function decideFlowLLM(input: {
         has_last_candidates: false,
       }),
     },
-    { role: "assistant", content: '{"mode":"NEW_PRODUCT","reason":"new product request"}' },
+    {
+      role: "assistant",
+      content: '{"mode":"NEW_PRODUCT","reason":"new product request"}',
+    },
     {
       role: "user",
       content: JSON.stringify({
@@ -171,7 +199,11 @@ export async function decideFlowLLM(input: {
         },
       }),
     },
-    { role: "assistant", content: '{"mode":"NEW_PRODUCT","reason":"asking for different body part massager - neck vs foot/leg"}' },
+    {
+      role: "assistant",
+      content:
+        '{"mode":"NEW_PRODUCT","reason":"asking for different body part massager - neck vs foot/leg"}',
+    },
     { role: "user", content: JSON.stringify(input) },
   ];
   const msg = await llm.invoke(fewshot);
@@ -186,7 +218,10 @@ export async function decideFlowLLM(input: {
   const parsed = JSON.parse(
     start >= 0 && end > start ? text.slice(start, end + 1) : text
   );
-  logger.info({ input, decision: parsed?.mode, reason: parsed?.reason }, "supervisor.decideFlow");
+  logger.info(
+    { input, decision: parsed?.mode, reason: parsed?.reason },
+    "supervisor.decideFlow"
+  );
   if (!parsed?.mode) throw new Error("Supervisor: invalid mode");
   return parsed.mode as Mode;
 }
