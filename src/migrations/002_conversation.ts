@@ -23,3 +23,4 @@ up()
   .finally(async () => {
     await pool.end();
   });
+

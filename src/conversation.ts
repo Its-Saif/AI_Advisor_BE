@@ -6,6 +6,7 @@ export type StoredMessage = {
   content: string;
   product?: any | null;
   candidates?: any[] | null;
+  mode?: string | null;
   created_at: string;
 };
 
@@ -14,21 +15,22 @@ export async function saveMessage(msg: {
   content: string;
   product?: any | null;
   candidates?: any[] | null;
+  mode?: string | null;
 }) {
   const productJson = msg.product != null ? JSON.stringify(msg.product) : null;
   const candidatesJson = msg.candidates != null ? JSON.stringify(msg.candidates) : null;
   const res = await query<StoredMessage>(
-    `INSERT INTO messages (role, content, product, candidates)
-     VALUES ($1, $2, $3::jsonb, $4::jsonb)
-     RETURNING id, role, content, product, candidates, created_at`,
-    [msg.role, msg.content, productJson, candidatesJson]
+    `INSERT INTO messages (role, content, product, candidates, mode)
+     VALUES ($1, $2, $3::jsonb, $4::jsonb, $5)
+     RETURNING id, role, content, product, candidates, mode, created_at`,
+    [msg.role, msg.content, productJson, candidatesJson, msg.mode ?? null]
   );
   return res.rows[0];
 }
 
 export async function listMessages(): Promise<StoredMessage[]> {
   const res = await query<StoredMessage>(
-    `SELECT id, role, content, product, candidates, created_at
+    `SELECT id, role, content, product, candidates, mode, created_at
      FROM messages
      ORDER BY id ASC`
   );

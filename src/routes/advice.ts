@@ -70,9 +70,9 @@ if (mode === 'SMALL_TALK') {
       : Array.isArray(chunk.content) ? chunk.content.map((p: any) => p?.text || '').join('') : '';
     if (piece) { reply += piece; sseSend({ token: piece }, 'tokens'); }
   }
-  await saveMessage({ role: 'assistant', content: reply });
+  await saveMessage({ role: 'assistant', content: reply, mode: 'SMALL_TALK' });
   logger.info({ mode, replyLength: reply.length }, 'advice.final');
-  sseSend({ rationale: reply }, 'final');
+  sseSend({ rationale: reply, mode: 'SMALL_TALK' }, 'final');
   return sseClose();
 }
 
@@ -92,9 +92,9 @@ if (mode === 'FOLLOWUP_QA' && lastProduct) {
       : Array.isArray(chunk.content) ? chunk.content.map((p: any) => p?.text || '').join('') : '';
     if (piece) { reply += piece; sseSend({ token: piece }, 'tokens'); }
   }
-  await saveMessage({ role: 'assistant', content: reply });
+  await saveMessage({ role: 'assistant', content: reply, mode: 'FOLLOWUP_QA' });
   logger.info({ mode, productId: lastProduct.id, replyLength: reply.length }, 'advice.final');
-  sseSend({ rationale: reply, product: lastProduct }, 'final');
+  sseSend({ rationale: reply, product: lastProduct, mode: 'FOLLOWUP_QA' }, 'final');
   return sseClose();
 }
 
@@ -122,9 +122,9 @@ if (mode === 'MORE_PRODUCTS' && lastProduct) {
       : Array.isArray(chunk.content) ? chunk.content.map((p: any) => p?.text || '').join('') : '';
     if (piece) { rationale += piece; sseSend({ token: piece }, 'tokens'); }
   }
-  await saveMessage({ role: 'assistant', content: rationale, candidates });
+  await saveMessage({ role: 'assistant', content: rationale, candidates, mode: 'more_products' });
   logger.info({ mode, candidateIds: candidates.map(c => c.id) }, 'advice.final');
-  sseSend({ candidates, rationale }, 'final');
+  sseSend({ candidates, rationale, mode: 'more_products' }, 'final');
   return sseClose();
 }
 
@@ -153,9 +153,9 @@ if (!top3.length) {
       : Array.isArray(chunk.content) ? chunk.content.map((p: any) => p?.text || '').join('') : '';
     if (piece) { reply += piece; sseSend({ token: piece }, 'tokens'); }
   }
-  await saveMessage({ role: 'assistant', content: reply });
+  await saveMessage({ role: 'assistant', content: reply, mode: 'NOT_AVAILABLE' });
   logger.info({ mode: 'NOT_AVAILABLE' }, 'advice.final');
-  sseSend({ rationale: reply }, 'final');
+  sseSend({ rationale: reply, mode: 'NOT_AVAILABLE' }, 'final');
   return sseClose();
 }
 
@@ -175,12 +175,12 @@ if (pick.not_available === true) {
       : Array.isArray(chunk.content) ? chunk.content.map((p: any) => p?.text || '').join('') : '';
     if (piece) { replyNA += piece; sseSend({ token: piece }, 'tokens'); }
   }
-  await saveMessage({ role: 'assistant', content: replyNA });
+  await saveMessage({ role: 'assistant', content: replyNA, mode: 'NOT_AVAILABLE' });
   logger.info({ mode: 'NOT_AVAILABLE', reason: pick.reason }, 'advice.final');
-  sseSend({ rationale: replyNA }, 'final');
+  sseSend({ rationale: replyNA, mode: 'NOT_AVAILABLE' }, 'final');
   return sseClose();
 }
-const product = top3[0];
+const product = top3[0]!;
 
 sseSend({ stage: 'reasoning' }, 'progress');
 const llm = new ChatOpenAI({ model: MODEL_CHAT, temperature: 0 });
@@ -195,9 +195,9 @@ for await (const chunk of stream) {
     : Array.isArray(chunk.content) ? chunk.content.map((p: any) => p?.text || '').join('') : '';
   if (piece) { rationale += piece; sseSend({ token: piece }, 'tokens'); }
 }
-await saveMessage({ role: 'assistant', content: rationale, product, candidates: top3 });
+await saveMessage({ role: 'assistant', content: rationale, product, candidates: top3, mode: 'single' });
 logger.info({ mode: 'NEW_PRODUCT', productId: product.id }, 'advice.final');
-sseSend({ product, rationale }, 'final');
+sseSend({ product, rationale, mode: 'single' }, 'final');
 return sseClose();
   } catch (e: any) {
     try {

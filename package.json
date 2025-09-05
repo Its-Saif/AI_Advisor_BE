@@ -11,7 +11,8 @@
     "ingest": "tsx src/ingestion.ts",
     "db:psql": "docker exec -it ai_advisor_pg psql -U postgres -d ai_advisor",
      "agents:test": "tsx src/agents/test_run.ts",
-     "migrate:conv": "tsx src/migrations/002_conversation.ts"
+     "migrate:conv": "tsx src/migrations/002_conversation.ts",
+     "migrate:mode": "tsx src/migrations/003_messages_mode.ts"
 
   },
   "keywords": [],
