@@ -3,6 +3,21 @@ AI Advisor Backend - Setup and Docker Runbook
 Environment variables (required)
 .env.example file is place, just create a .env file from that
 
+**Dockerized**
+
+1. Prepare a .env file in this directory.
+2. Run this command - docker compose up -d --build
+3. Verify health:
+   curl http://localhost:3000/health
+
+**Important Note**
+
+Ideally, if you’ve set up the **.env** file correctly (as shown in the **.env.example** file), everything should work out of the box. After running the command:
+docker compose up -d --build
+wait until the terminal displays:
+ai_advisor_api | API listening on http://localhost:3000
+Once you see this, start your frontend, and everything should be up and running.
+
 Local (without Docker)
 
 1. Start Postgres (via compose):
@@ -16,13 +31,6 @@ Local (without Docker)
    npm run ingest
 4. Run the API:
    npm run dev
-
-Dockerized
-
-1. Prepare a .env file in this directory.
-2. Run this command - docker compose up -d --build
-3. Verify health:
-   curl http://localhost:3000/health
 
 Useful commands
 
