@@ -16,6 +16,8 @@ Ideally, if you’ve set up the **.env** file correctly (as shown in the **.env.
 docker compose up -d --build
 wait until the terminal displays:
 ai_advisor_api | API listening on http://localhost:3000
+if the above log dosen't appear after docker finishes setting up, then just run this command :
+npm run dev
 Once you see this, start your frontend, and everything should be up and running.
 
 Local (without Docker)

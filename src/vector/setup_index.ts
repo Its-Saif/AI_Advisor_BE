@@ -1,18 +1,17 @@
-import 'dotenv/config';
-import { Pinecone } from '@pinecone-database/pinecone';
+import "dotenv/config";
+import { Pinecone } from "@pinecone-database/pinecone";
 
-const INDEX_NAME = process.env.PINECONE_INDEX || 'product-vectors';
+const INDEX_NAME = process.env.PINECONE_INDEX || "product-vectors";
 
-// Adjust these if your project uses a different provider/region:
-const CLOUD = process.env.PINECONE_CLOUD || 'aws';
-const REGION = process.env.PINECONE_REGION || 'us-east-1';
+const CLOUD = process.env.PINECONE_CLOUD || "aws";
+const REGION = process.env.PINECONE_REGION || "us-east-1";
 
 async function main() {
-  if (!process.env.PINECONE_API_KEY) throw new Error('PINECONE_API_KEY not set');
+  if (!process.env.PINECONE_API_KEY)
+    throw new Error("PINECONE_API_KEY not set");
   const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
   try {
-    // If describe fails, we will try to create
     await pc.describeIndex(INDEX_NAME);
     console.log(`Index '${INDEX_NAME}' already exists.`);
   } catch {
@@ -20,10 +19,10 @@ async function main() {
     await pc.createIndex({
       name: INDEX_NAME,
       dimension: 1536, // OpenAI text-embedding-3-small
-      metric: 'cosine',
+      metric: "cosine",
       spec: {
         serverless: {
-          cloud: CLOUD as 'aws' | 'gcp',
+          cloud: CLOUD as "aws" | "gcp",
           region: REGION,
         },
       },
